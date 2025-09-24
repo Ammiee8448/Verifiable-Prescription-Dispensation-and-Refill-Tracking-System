@@ -1,0 +1,127 @@
+# PRD: Verifiable Prescription Dispensation and Refill Tracking System
+
+## Overview
+A blockchain-based system for managing prescription issuance, dispensation, and refill tracking. It ensures:
+- Transparent, tamper-proof prescription records.
+- Controlled dispensation by licensed pharmacies.
+- Patient-controlled refill rights.
+- Regulator oversight and auditability.
+
+The system uses **Stacks blockchain (Clarity smart contracts)** and follows a **modular design**: each contract handles a single responsibility.
+
+---
+
+## Core Smart Contracts
+
+### 1. **PrescriptionRegistry Contract**
+**Purpose:**  
+Register prescriptions issued by authorized doctors to patients.
+
+**Data Structures:**  
+- `map prescriptions { prescriptionId: { patient: principal, doctor: principal, drug: string, dosage: string, refills: uint, issuedAt: uint, validUntil: uint, active: bool } }`
+- `map authorizedDoctors { doctor: principal }`
+
+**Justification:**  
+Creates a trusted, immutable record of prescriptions with refills and validity.
+
+---
+
+### 2. **PharmacyRegistry Contract**
+**Purpose:**  
+Maintain a whitelist of pharmacies authorized to dispense drugs.
+
+**Data Structures:**  
+- `map pharmacies { pharmacyId: { name: string, verified: bool, metadata: string } }`
+
+**Justification:**  
+Ensures only licensed pharmacies can interact with the dispensation flow.
+
+---
+
+### 3. **DispensationTracking Contract**
+**Purpose:**  
+Track dispensation events for each prescription.
+
+**Data Structures:**  
+- `map dispensations { dispenseId: { prescriptionId: uint, pharmacy: principal, patient: principal, quantity: uint, timestamp: uint } }`
+- `map refillCounts { prescriptionId: uint }`
+
+**Justification:**  
+Prevents abuse (e.g., multiple pharmacies dispensing the same prescription beyond limits).
+
+---
+
+### 4. **RefillManagement Contract**
+**Purpose:**  
+Control and authorize prescription refills until the limit is exhausted.
+
+**Data Structures:**  
+- `map refillRights { prescriptionId: { remaining: uint, patient: principal, active: bool } }`
+
+**Justification:**  
+Automates refill limits and prevents overuse beyond prescribed quantities.
+
+---
+
+### 5. **AuditDAO Contract**
+**Purpose:**  
+Enable regulators and stakeholders to audit prescriptions and vote on compliance-related policies.
+
+**Data Structures:**  
+- `map proposals { proposalId: { title: string, description: string, votesFor: uint, votesAgainst: uint, deadline: uint, executed: bool } }`
+- `map votes { proposalId: { voter: principal, choice: bool } }`
+
+**Justification:**  
+Provides decentralized oversight, ensuring transparency and accountability.
+
+---
+
+## System Workflow
+1. **Doctor Issues Prescription** → Added to `PrescriptionRegistry`.  
+2. **Pharmacy Whitelisting** → Pharmacies registered in `PharmacyRegistry`.  
+3. **Dispensation** → When patient collects, event recorded in `DispensationTracking`.  
+4. **Refill Check** → Controlled via `RefillManagement`. Remaining refills decremented.  
+5. **Auditing** → DAO ensures oversight and resolves disputes.  
+
+---
+
+## Suggested File Setup
+
+Inside your `contracts/` folder, create:
+
+- `prescription-registry.clar`
+- `pharmacy-registry.clar`
+- `dispensation-tracking.clar`
+- `refill-management.clar`
+- `audit-dao.clar`
+
+---
+
+## Example Contract Stubs
+
+### contracts/prescription-registry.clar
+```clarity
+(define-data-var prescription-counter uint u0)
+
+(define-map prescriptions
+  {id: uint}
+  {patient: principal, doctor: principal, drug: (string-ascii 50), dosage: (string-ascii 50), refills: uint, issuedAt: uint, validUntil: uint, active: bool})
+
+(define-map authorized-doctors
+  {doctor: principal}
+  {verified: bool})
+
+;; Add doctor
+(define-public (authorize-doctor (doc principal))
+  (begin
+    (map-set authorized-doctors {doctor: doc} {verified: true})
+    (ok true)))
+
+;; Issue prescription
+(define-public (issue-prescription (patient principal) (drug (string-ascii 50)) (dosage (string-ascii 50)) (refills uint) (validUntil uint))
+  (let ((id (+ (var-get prescription-counter) u1)))
+    (begin
+      (var-set prescription-counter id)
+      (map-set prescriptions {id: id}
+        {patient: patient, doctor: tx-sender, drug: drug, dosage: dosage, refills: refills, issuedAt: block-height, validUntil: validUntil, active: true})
+      (ok id)))))
