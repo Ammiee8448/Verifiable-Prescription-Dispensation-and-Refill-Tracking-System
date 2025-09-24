@@ -117,7 +117,7 @@
 
 ;; Check if prescription is valid through external contract
 (define-private (is-prescription-valid (prescription-id uint))
-  (contract-call? prescription-registry-contract is-prescription-valid prescription-id)
+  (contract-call? prescription-registry-contract check-prescription-valid prescription-id)
 )
 
 ;; ===== READ-ONLY FUNCTIONS =====
@@ -181,7 +181,9 @@
       ;; (asserts! (is-pharmacy-verified contract-caller) err-pharmacy-not-verified)
 
       ;; Check if prescription is valid
-      (asserts! (unwrap! (is-prescription-valid prescription-id) err-external-contract-error) err-prescription-inactive)
+      (let ((prescription-valid (unwrap! (is-prescription-valid prescription-id) err-external-contract-error)))
+        (asserts! prescription-valid err-prescription-inactive)
+      )
 
       ;; Get prescription details to verify patient
       (let ((prescription-data (unwrap! (get-prescription-details prescription-id) err-prescription-not-found)))

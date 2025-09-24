@@ -96,7 +96,7 @@
 
 ;; Check if prescription is valid through external contract
 (define-private (is-prescription-valid (prescription-id uint))
-  (contract-call? prescription-registry-contract is-prescription-valid prescription-id)
+  (contract-call? prescription-registry-contract check-prescription-valid prescription-id)
 )
 
 ;; Record dispensation through external contract
@@ -218,7 +218,9 @@
     (asserts! (is-valid-quantity quantity) err-invalid-quantity)
     
     ;; Check if prescription is valid
-    (asserts! (unwrap! (is-prescription-valid prescription-id) err-external-contract-error) err-prescription-inactive)
+    (let ((prescription-valid (unwrap! (is-prescription-valid prescription-id) err-external-contract-error)))
+      (asserts! prescription-valid err-prescription-inactive)
+    )
     
     ;; Get prescription details to verify patient
     (let ((prescription-data (unwrap! (get-prescription-details prescription-id) err-prescription-not-found)))
@@ -286,7 +288,7 @@
                   
                   (ok new-refill-number)
                 )
-              error-code (err err-external-contract-error)
+              error-code (err u306)
             )
           )
         )

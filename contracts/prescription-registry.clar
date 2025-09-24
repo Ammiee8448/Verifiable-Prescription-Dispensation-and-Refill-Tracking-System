@@ -334,6 +334,11 @@
   )
 )
 
+;; Public function to check if prescription is valid (for cross-contract calls)
+(define-public (check-prescription-valid (prescription-id uint))
+  (ok (is-prescription-valid prescription-id))
+)
+
 ;; Deactivate a prescription (doctor or admin only)
 (define-public (deactivate-prescription (prescription-id uint))
   (begin
