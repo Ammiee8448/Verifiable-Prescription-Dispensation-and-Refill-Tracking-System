@@ -5,9 +5,25 @@ authors = []
 telemetry = false
 cache_dir = "./.cache"
 
-# [contracts.counter]
-# path = "contracts/counter.clar"
-# epoch = "latest"
+[contracts.prescription-registry]
+path = "contracts/prescription-registry.clar"
+epoch = "3.0"
+
+[contracts.pharmacy-registry]
+path = "contracts/pharmacy-registry.clar"
+epoch = "3.0"
+
+[contracts.dispensation-tracking]
+path = "contracts/dispensation-tracking.clar"
+epoch = "3.0"
+
+[contracts.refill-management]
+path = "contracts/refill-management.clar"
+epoch = "3.0"
+
+[contracts.audit-dao]
+path = "contracts/audit-dao.clar"
+epoch = "3.0"
 
 [repl.analysis]
 passes = ["check_checker"]
